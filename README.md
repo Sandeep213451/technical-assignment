@@ -1,6 +1,6 @@
 # Task Management System
 
-Hey there, this is my submission for the technical assignment! It's a decoupled Task Management System built with Laravel 11 for the backend and AngularJS for the frontend.
+This is my submission for the technical assignment. It's a decoupled Task Management System built with Laravel 11 for the backend and AngularJS for the frontend.
 
 ## The Approach & Key Decisions
 The core of this assignment was the **Dynamic Rule-Based Assignment Engine**. Rather than doing everything synchronously when a task is created (which could block the API), I decided to move the assignment logic to a background queue (`EvaluateTaskEligibility`). 
@@ -11,13 +11,13 @@ To prevent race conditions (e.g. if two workers try to assign the same task simu
 
 ### Database & Performance Strategy
 The assignment asked to consider a system with 100k+ users. While I haven't load-tested this specific docker container with 100k users, I designed the database schema to theoretically support it:
-- I created a composite index on `(department, active_tasks_count, years_of_experience)`. This aligns perfectly with the rule engine's filtering and sorting requirements, meaning MySQL can traverse the B-Tree index rather than performing a full table scan.
+- I created a composite index on `(department, active_tasks_count, years_of_experience)`. This helps the database quickly filter and sort users without scanning the entire table.
 - For API performance, the dashboard route is cached using Redis. This prevents constant database queries on every page load. The cache is immediately invalidated whenever a user's task status changes to ensure data consistency.
 
 ### What I'd Improve with More Time
-- **Frontend Stack**: While AngularJS works well for this standalone SPA, in a real-world scenario I would transition to Angular (v2+) or React with a proper build step (Vite/Webpack) for better modularity and bundle optimization.
+- **Frontend Stack**: While AngularJS works well for this SPA, in a real-world scenario I would transition to React or Vue with a proper build step (Vite/Webpack) for better modularity.
 - **CI/CD**: I would add automated GitHub Action pipelines to run the PHPUnit tests on every pull request.
-- **Queue Workers**: In this Docker setup, the queue is processed synchronously via `sync` or a simple worker for simplicity. In production, I would use Laravel Horizon and Supervisor to manage multiple Redis queue workers robustly.
+- **Queue Workers**: In this Docker setup, the queue is processed synchronously for simplicity. In production, I would use Laravel Horizon and Supervisor to manage Redis queue workers.
 
 ## Setup Instructions
 
