@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="taskApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Task Management System | Dynamic Rule Engine</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.js"></script>
+    
+    <!-- Bootstrap CSS & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --surface-bg: #0f172a;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            min-height: 100vh;
+        }
+        .navbar-custom {
+            background: #1e293b;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .brand-logo {
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-custom {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: #ffffff;
+        }
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+        .rule-tag {
+            background-color: #f1f5f9;
+            color: #475569;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+        .badge-priority-high { background-color: #ef4444; color: white; }
+        .badge-priority-medium { background-color: #f59e0b; color: white; }
+        .badge-priority-low { background-color: #10b981; color: white; }
+        
+        .badge-status-todo { background-color: #64748b; color: white; }
+        .badge-status-in-progress { background-color: #3b82f6; color: white; }
+        .badge-status-completed { background-color: #10b981; color: white; }
+        
+        .stat-widget {
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Global Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom" ng-controller="NavController">
+        <div class="container">
+            <a class="navbar-brand brand-logo d-flex align-items-center gap-2" href="#!/">
+                <i class="bi bi-cpu-fill text-indigo"></i> TaskEngine Enterprise
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item" ng-if="!isLoggedIn()"><a class="nav-link" href="#!/login"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
+                    <li class="nav-item" ng-if="!isLoggedIn()"><a class="btn btn-primary btn-sm px-3 rounded-pill" href="#!/register">Register Account</a></li>
+                    
+                    <li class="nav-item" ng-if="isLoggedIn()"><a class="nav-link" href="#!/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                    <li class="nav-item" ng-if="isLoggedIn() && isAdmin()"><a class="nav-link" href="#!/create-task"><i class="bi bi-plus-circle-fill text-success"></i> Create Task</a></li>
+                    <li class="nav-item" ng-if="isLoggedIn()"><a class="nav-link" href="#!/profile"><i class="bi bi-person-badge"></i> Profile</a></li>
+                    
+                    <li class="nav-item ms-lg-3" ng-if="isLoggedIn()">
+                        <span class="badge bg-secondary me-2 py-2 px-3 fw-normal" ng-if="getUser()">
+                            <i class="bi bi-person-circle me-1"></i> {{getUser().name}} ({{getUser().role}})
+                        </span>
+                        <button class="btn btn-outline-light btn-sm rounded-pill px-3" ng-click="logout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main View Routing Area -->
+    <div class="container py-4">
+        <div ng-view></div>
+    </div>
+
+    <!-- Application Controller Scripts -->
+    <script src="app.js"></script>
+
+    <!-- Templates -->
+
+    <!-- Login Template -->
+    <script type="text/ng-template" id="login.html">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-5">
+                <div class="card card-custom p-4">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-shield-lock-fill display-4 text-primary"></i>
+                            <h3 class="fw-bold mt-2">Welcome Back</h3>
+                            <p class="text-muted small">Sign in to access your task dashboard</p>
+                        </div>
+                        <div class="alert alert-danger" ng-if="error"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{error}}</div>
+                        <form ng-submit="login()">
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" ng-model="user.email" placeholder="admin@example.com" required>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label font-weight-medium">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                    <input type="password" class="form-control" ng-model="user.password" placeholder="••••••••" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3"><i class="bi bi-box-arrow-in-right me-2"></i> Sign In</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Don't have an account? <a href="#!/register" class="fw-semibold text-primary">Register here</a></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Register Template -->
+    <script type="text/ng-template" id="register.html">
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-7">
+                <div class="card card-custom p-4">
+                    <div class="card-body">
+                        <h3 class="fw-bold text-center mb-1">Create Account</h3>
+                        <p class="text-muted text-center small mb-4">Register user profile with attributes for dynamic assignment matching</p>
+                        
+                        <div class="alert alert-danger" ng-if="error"><i class="bi bi-exclamation-circle me-2"></i>{{error}}</div>
+                        
+                        <form ng-submit="register()">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" ng-model="user.name" placeholder="John Doe" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" ng-model="user.email" placeholder="john@example.com" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" ng-model="user.password" placeholder="Minimum 6 characters" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">System Role</label>
+                                    <select class="form-select" ng-model="user.role" required>
+                                        <option value="User">User</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <h6 class="fw-bold text-indigo mt-3 mb-3"><i class="bi bi-sliders me-1"></i> Engine Attributes</h6>
+                            <div class="row bg-light p-3 rounded-3 border mb-4">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <label class="form-label">Department</label>
+                                    <select class="form-select" ng-model="user.department" required>
+                                        <option value="IT">IT</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Operation">Operation</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <label class="form-label">Years of Experience</label>
+                                    <input type="number" min="0" class="form-control" ng-model="user.years_of_experience" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Location</label>
+                                    <input type="text" class="form-control" ng-model="user.location" placeholder="Bhubaneswar" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3"><i class="bi bi-person-check-fill me-2"></i> Register Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Dashboard Template -->
+    <script type="text/ng-template" id="dashboard.html">
+        <div>
+            <!-- Banner -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold m-0">Dashboard</h2>
+                    <p class="text-muted small m-0">Welcome back, <span class="fw-semibold">{{currentUser.name}}</span></p>
+                </div>
+                <div>
+                    <span class="badge bg-white text-dark border p-2 rounded-3 me-2">
+                        <i class="bi bi-building me-1 text-primary"></i> Dept: {{currentUser.department}}
+                    </span>
+                    <span class="badge bg-white text-dark border p-2 rounded-3 me-2">
+                        <i class="bi bi-briefcase me-1 text-success"></i> {{currentUser.years_of_experience}} yrs Exp
+                    </span>
+                    <span class="badge bg-white text-dark border p-2 rounded-3">
+                        <i class="bi bi-list-task me-1 text-warning"></i> Active Tasks: {{currentUser.active_tasks_count}}
+                    </span>
+                </div>
+            </div>
+
+            <div class="alert alert-success alert-dismissible fade show" ng-if="message" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i> {{message}}
+                <button type="button" class="btn-close" ng-click="message=''"></button>
+            </div>
+            <div class="alert alert-danger alert-dismissible fade show" ng-if="error" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{error}}
+                <button type="button" class="btn-close" ng-click="error=''"></button>
+            </div>
+
+            <div class="text-center py-5" ng-if="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading tasks...</p>
+            </div>
+
+            <!-- Admin / Manager View -->
+            <div ng-if="isAdmin() && !loading">
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i> System Tasks Overview</h5>
+                        <a href="#!/create-task" class="btn btn-primary btn-sm rounded-pill"><i class="bi bi-plus-lg me-1"></i> New Task</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle m-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Rule Criteria</th>
+                                        <th>Assigned User</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="task in allTasks">
+                                        <td class="fw-bold">#{{task.id}}</td>
+                                        <td>
+                                            <div class="fw-semibold">{{task.title}}</div>
+                                            <small class="text-muted">{{task.description | limitTo: 45}}...</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge" ng-class="{'badge-priority-high': task.priority==='High', 'badge-priority-medium': task.priority==='Medium', 'badge-priority-low': task.priority==='Low'}">{{task.priority}}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" ng-class="{'badge-status-todo': task.status==='Todo', 'badge-status-in-progress': task.status==='In Progress', 'badge-status-completed': task.status==='Completed'}">{{task.status}}</span>
+                                        </td>
+                                        <td>
+                                            <span class="rule-tag" ng-if="task.rules.department"><i class="bi bi-building"></i> {{task.rules.department}}</span>
+                                            <span class="rule-tag" ng-if="task.rules.min_experience"><i class="bi bi-briefcase"></i> &ge;{{task.rules.min_experience}}y</span>
+                                            <span class="rule-tag" ng-if="task.rules.max_active_tasks"><i class="bi bi-check2-square"></i> &lt;{{task.rules.max_active_tasks}} tasks</span>
+                                            <span class="rule-tag" ng-if="task.rules.location"><i class="bi bi-geo-alt"></i> {{task.rules.location}}</span>
+                                        </td>
+                                        <td>
+                                            <span ng-if="task.assignments && task.assignments.length > 0" class="badge bg-indigo text-white p-2 rounded-2" style="background-color: #6366f1;">
+                                                <i class="bi bi-person-fill me-1"></i> {{task.assignments[0].user.name}} ({{task.assignments[0].user.department}})
+                                            </span>
+                                            <span ng-if="!task.assignments || task.assignments.length === 0" class="badge bg-light text-muted border">
+                                                <i class="bi bi-dash-circle me-1"></i> Unassigned
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" ng-click="recompute(task.id)" title="Trigger Rule Evaluation"><i class="bi bi-arrow-repeat"></i> Recompute</button>
+                                                <button class="btn btn-outline-danger" ng-click="deleteTask(task.id)" title="Delete Task"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="allTasks.length === 0">
+                                        <td colspan="7" class="text-center py-4 text-muted">No tasks available in the system.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standard User View -->
+            <div ng-if="!isAdmin() && !loading">
+                <h4 class="fw-bold mb-3"><i class="bi bi-card-checklist text-primary me-2"></i> My Assigned Tasks</h4>
+                
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4" ng-repeat="task in myTasks">
+                        <div class="card card-custom h-100">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge" ng-class="{'badge-priority-high': task.priority==='High', 'badge-priority-medium': task.priority==='Medium', 'badge-priority-low': task.priority==='Low'}">{{task.priority}} Priority</span>
+                                    <span class="badge" ng-class="{'badge-status-todo': task.status==='Todo', 'badge-status-in-progress': task.status==='In Progress', 'badge-status-completed': task.status==='Completed'}">{{task.status}}</span>
+                                </div>
+                                <h5 class="fw-bold mt-2">{{task.title}}</h5>
+                                <p class="text-muted small flex-grow-1">{{task.description}}</p>
+                                
+                                <div class="border-top pt-3 mt-2">
+                                    <div class="d-flex justify-content-between text-muted small mb-3">
+                                        <span><i class="bi bi-calendar-event me-1"></i> Due: {{task.due_date | date: 'mediumDate'}}</span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary w-50" ng-click="updateTaskStatus(task.id, 'In Progress')" ng-disabled="task.status==='In Progress'"><i class="bi bi-play-circle me-1"></i> In Progress</button>
+                                        <button class="btn btn-sm btn-success w-50" ng-click="updateTaskStatus(task.id, 'Completed')" ng-disabled="task.status==='Completed'"><i class="bi bi-check-circle me-1"></i> Complete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12" ng-if="myTasks.length === 0">
+                        <div class="card card-custom text-center py-5">
+                            <div class="card-body">
+                                <i class="bi bi-inbox text-muted display-4"></i>
+                                <h5 class="fw-bold mt-3">No Active Assignments</h5>
+                                <p class="text-muted">You currently have no tasks assigned to you by the engine rules.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Create Task Template -->
+    <script type="text/ng-template" id="create-task.html">
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <div class="card card-custom p-4">
+                    <div class="card-body">
+                        <h4 class="fw-bold mb-1"><i class="bi bi-plus-square-fill text-primary me-2"></i> Create Task & Define Assignment Rules</h4>
+                        <p class="text-muted small mb-4">Tasks are asynchronously evaluated and automatically assigned to the optimal candidate based on rule priorities.</p>
+
+                        <div class="alert alert-success" ng-if="message"><i class="bi bi-check-circle-fill me-2"></i> {{message}}</div>
+                        <div class="alert alert-danger" ng-if="error"><i class="bi bi-exclamation-circle me-2"></i> {{error}}</div>
+
+                        <form ng-submit="createTask()">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label fw-semibold">Task Title</label>
+                                    <input type="text" class="form-control" ng-model="task.title" placeholder="e.g. Audit Financial Records Q3" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Priority</label>
+                                    <select class="form-select" ng-model="task.priority" required>
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label fw-semibold">Description</label>
+                                    <textarea class="form-control" rows="3" ng-model="task.description" placeholder="Detailed task objectives..." required></textarea>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Due Date</label>
+                                    <input type="date" class="form-control" ng-model="task.due_date" required>
+                                </div>
+                            </div>
+                            
+                            <h5 class="fw-bold text-indigo mt-4 mb-3"><i class="bi bi-diagram-3-fill me-1"></i> Engine Assignment Rules</h5>
+                            <div class="bg-light p-4 rounded-3 border">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label font-weight-medium">Target Department</label>
+                                        <select class="form-select" ng-model="task.rules.department">
+                                            <option value="">Any Department</option>
+                                            <option value="IT">IT</option>
+                                            <option value="HR">HR</option>
+                                            <option value="Finance">Finance</option>
+                                            <option value="Operation">Operation</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label font-weight-medium">Minimum Experience (Years)</label>
+                                        <input type="number" min="0" class="form-control" ng-model="task.rules.min_experience" placeholder="e.g. 3">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label font-weight-medium">Max Active Workload</label>
+                                        <input type="number" min="1" class="form-control" ng-model="task.rules.max_active_tasks" placeholder="e.g. 5">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label font-weight-medium">Target Location</label>
+                                        <input type="text" class="form-control" ng-model="task.rules.location" placeholder="e.g. Bhubaneswar">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 py-2 mt-4 fw-semibold rounded-3" ng-disabled="isSubmitting">
+                                <span ng-if="!isSubmitting"><i class="bi bi-lightning-charge-fill me-2"></i> Save Task & Evaluate Rules</span>
+                                <span ng-if="isSubmitting"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- User Profile Template -->
+    <script type="text/ng-template" id="profile.html">
+        <div class="row justify-content-center">
+            <div class="col-md-7">
+                <div class="card card-custom p-4">
+                    <div class="card-body">
+                        <h4 class="fw-bold mb-1"><i class="bi bi-person-lines-fill text-primary me-2"></i> User Engine Profile</h4>
+                        <p class="text-muted small mb-4">Updating your department, experience, or location triggers automatic background re-evaluation of task assignments!</p>
+
+                        <div class="alert alert-success" ng-if="message"><i class="bi bi-check-circle-fill me-2"></i> {{message}}</div>
+                        <div class="alert alert-danger" ng-if="error"><i class="bi bi-exclamation-circle me-2"></i> {{error}}</div>
+
+                        <form ng-submit="saveProfile()">
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" ng-model="profile.name" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Department</label>
+                                    <select class="form-select" ng-model="profile.department" required>
+                                        <option value="IT">IT</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Operation">Operation</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Years of Experience</label>
+                                    <input type="number" min="0" class="form-control" ng-model="profile.years_of_experience" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Location</label>
+                                    <input type="text" class="form-control" ng-model="profile.location" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Current Active Workload</label>
+                                    <input type="text" class="form-control bg-light" ng-model="profile.active_tasks_count" disabled>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 mt-3 fw-semibold rounded-3"><i class="bi bi-save me-2"></i> Save Profile & Recompute Tasks</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
