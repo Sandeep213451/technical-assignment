@@ -4,11 +4,16 @@ services:
     ports:
       - '8000:8000'
     environment:
+      - APP_KEY=base64:xJt1Y5J3z3n9+4Q2vX+G0jT7mR1wR9nE+O+5c8O6s8w=
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USERNAME=${DB_USERNAME:-my_user}
       - DB_PASSWORD=${DB_PASSWORD:-my_password}
       - DB_DATABASE=${DB_DATABASE:-my_database}
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_CLIENT=phpredis
       - REDIS_HOST=redis
     volumes:
       - './backend:/app'
